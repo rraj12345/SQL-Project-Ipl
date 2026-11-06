@@ -1,111 +1,137 @@
 # IPL Match & Ball-by-Ball Analysis | PostgreSQL
 
-A SQL portfolio project exploring Indian Premier League (IPL) match results and ball-by-ball delivery data. The project demonstrates relational data preparation, data quality checks, aggregations, joins, conditional logic, and window functions using PostgreSQL.
+A PostgreSQL project exploring Indian Premier League match results and delivery-level performance. The work combines match data with ball-by-ball records to examine team outcomes, scoring patterns, bowling contributions, venue performance, and data consistency.
 
-## Project overview
+## Project objective
 
-The repository contains two related datasets:
+The goal is to turn two related cricket datasets into a relational SQL analysis and demonstrate how match-level and delivery-level data can answer practical questions for team analysts, tournament operations, broadcasters, and cricket fans.
 
-- **Match-level data** — match date, city, venue, teams, toss decision, winner, result, and player of the match.
-- **Delivery-level data** — innings, over, ball, batter, bowler, runs, extras, wickets, dismissal type, and batting/bowling teams.
+## Dataset overview
 
-The analysis moves from match-level questions to delivery-level performance patterns and data-quality checks.
+| File | Grain | Main fields |
+|---|---|---|
+| `IPL_matches.csv` | One row per match | Match ID, city, date, player of the match, venue, teams, toss decision, winner, result, result margin, umpires |
+| `IPL_Ball.csv` | One row per delivery record | Match ID, innings, over, ball, batter, non-striker, bowler, batter runs, extra runs, total runs, wicket and dismissal details, batting and bowling teams |
 
-## Business questions explored
+The match identifier `id` connects delivery records to the corresponding match in `IPL_Matches`. The SQL script uses PostgreSQL table names `IPL_Matches` and `deliveries`.
 
-### Match analysis
-- How many distinct cities have hosted IPL matches?
-- Which matches were decided by a margin of more than 100 runs?
-- Which matches ended in a tie?
-- How are match wins distributed across teams and venues?
-- How did scoring at Eden Gardens vary by year?
+## Analysis performed in the original SQL
 
-### Ball-by-ball analysis
-- Which teams scored the most batter boundaries (4s and 6s)?
-- Which bowling teams delivered the most dot balls?
-- What are the most common dismissal types?
-- Which bowlers conceded the most extra runs?
-- How many runs were scored at each venue?
+### 1. Match results and tournament coverage
 
-### Data quality
-- How can inconsistent team labels be standardized?
-- Are delivery identifiers unique when built from match, innings, over, and ball?
-- How can repeated delivery keys be isolated with `ROW_NUMBER()`?
+- Retrieve matches played on a specified date.
+- Identify matches won by more than 100 runs.
+- List tied matches, ordered by match date.
+- Count distinct cities that have hosted matches.
 
-## SQL skills demonstrated
+**Business relevance:** These questions help describe tournament reach, identify one-sided contests, and review close or unusual match outcomes. A tournament or media team could use this information when preparing venue summaries and match retrospectives.
 
-| Skill | Where it is used |
+### 2. Batting and bowling performance
+
+- Classify delivery records into `boundary`, `dot`, and `other` using `total_runs`.
+- Count boundary-classified and dot-ball records.
+- Rank batting teams by the number of boundary-classified deliveries.
+- Rank bowling teams by dot-ball records.
+- Summarize dismissals by dismissal type.
+- Identify the five bowlers with the highest total extra runs conceded.
+
+**Business relevance:** Boundary frequency can help compare attacking output, while dot-ball frequency can indicate how effectively a bowling side restricts scoring opportunities. Dismissal mix and extras can support bowling-performance reviews.
+
+**Interpretation note:** The original `CASE` expression defines a boundary as `total_runs >= 4`. Because it uses total runs rather than batter runs, deliveries involving extras can also enter this category. Treat this as the project's original *boundary proxy*, not an exact count of batter-hit fours and sixes.
+
+### 3. Venue and season analysis
+
+- Join delivery data to match data to attach venue and match date.
+- Calculate total runs by venue.
+- Calculate year-wise runs at Eden Gardens.
+
+**Business relevance:** Venue-level scoring summaries can support ground comparisons, broadcast context, and discussions about how scoring output differs across venues and seasons.
+
+### 4. Data cleaning and quality checks
+
+- Standardize the two spellings `Rising Pune Supergiants` and `Rising Pune Supergiant` into a consistent team label in a derived match table.
+- Construct a delivery key from match ID, innings, over, and ball.
+- Compare total rows with distinct delivery keys.
+- Use `ROW_NUMBER()` partitioned by the constructed key to identify repeated keys.
+- Use a subquery to return all records associated with repeated keys.
+
+**Business relevance:** Consistent team labels improve grouping and reporting. Delivery-key checks help identify potential duplicate records before using ball-level data for performance metrics.
+
+## Business takeaways this analysis can support
+
+The SQL work provides a foundation for questions such as:
+
+- Which teams appear strongest at generating boundary-classified scoring events?
+- Which bowling teams are most effective at creating dot-ball pressure?
+- Which bowlers may need to review their extras conceded?
+- How does total scoring vary by venue and by year at a selected ground?
+- Which dismissal types occur most frequently in the recorded delivery data?
+- Are team labels and delivery identifiers reliable enough for repeatable reporting?
+
+These are interpretation opportunities based on the queries in the repository. No numerical ranking or performance conclusion is claimed here because query outputs have not been attached or independently validated.
+
+## SQL concepts demonstrated
+
+| Concept | Application in the project |
 |---|---|
-| DDL and table design | Creating match and delivery tables |
-| Filtering and sorting | Date, result, and margin analysis |
-| Aggregations | `COUNT`, `SUM`, `GROUP BY` |
-| Conditional logic | `CASE`-based delivery classification and label standardization |
-| Joins | Enriching deliveries with match venue and date |
-| Type conversion | Converting result margins for numeric comparisons |
-| Date functions | Extracting match year |
-| Window functions | `ROW_NUMBER()` for duplicate-key inspection |
-| Subqueries | Retrieving repeated delivery records |
+| DDL and data types | Creating match and delivery tables |
+| CSV loading | Importing the two source datasets |
+| Filtering and sorting | Date, result, margin, and top-row queries |
+| Aggregation | `COUNT`, `SUM`, `GROUP BY` |
+| Conditional logic | Delivery classification and team-name standardization with `CASE` |
+| Joins | Adding match venue and date to delivery records |
+| Type conversion | Casting result margin for numeric comparison |
+| Date functions | Extracting year from match date |
+| Window functions | `ROW_NUMBER() OVER (PARTITION BY ...)` |
+| Subqueries | Retrieving records associated with repeated delivery keys |
+| Data quality checks | Comparing row counts and distinct constructed keys |
 
 ## Repository structure
 
 ```text
 SQL-Project-Ipl/
-├── IPL_matches.csv
-├── IPL_Ball.csv
-├── IPL_MATCHES.sql                 # Original project SQL
-├── QUERY.txt                      # Original query notes
-├── README.md
-└── sql/
-    ├── 01_setup_and_import.sql     # Reproducible PostgreSQL setup and CSV import
-    └── 02_analysis_queries.sql     # Clean, grouped analysis queries
+├── IPL_matches.csv       # Match-level source data
+├── IPL_Ball.csv          # Ball-by-ball source data
+├── IPL_MATCHES.sql       # Table creation, loading, transformations and analysis
+├── QUERY.txt             # Query notes / copy of the original SQL workflow
+└── README.md             # Project documentation
 ```
 
-## Tech stack
+## Technology
 
 - PostgreSQL
 - SQL
 - CSV datasets
 
-## Run the project
+## How to run
 
-### 1. Create a PostgreSQL database
+1. Create a PostgreSQL database.
+2. Open `IPL_MATCHES.sql` in pgAdmin or another PostgreSQL client.
+3. Review the table definitions and update the CSV file locations in the `COPY` statements to match your machine.
+4. Execute the script in stages: table creation, data loading, derived-table creation, and analysis queries.
 
-Create a database in PostgreSQL, then open a terminal in the repository root.
+**Important setup note:** The original script is preserved as the source of truth, but its import section needs local adjustment before a fresh run. It renames `IPL_BALL` to `deliveries` and then attempts to load data into `IPL_BALL`; that table name no longer exists after the rename. The `COPY` statements also contain machine-specific Windows paths. Correct the target table name and file paths in your local working copy before executing the import section.
 
-### 2. Create tables and import the datasets
+## Data and methodology notes
 
-Run the setup script with `psql`:
+- The project contains both match-level and delivery-level data; their relationship is based on match ID.
+- The original SQL creates intermediate tables (`deliveries_v02` through `deliveries_v05`) to keep derived classifications, match context, and duplicate checks separate from the source table.
+- The constructed `ball_id` in the SQL uses commas between its components, although the accompanying comment describes hyphens. The key is still intended to combine match ID, innings, over, and ball.
+- The current boundary classification uses `total_runs >= 4`; use `batsman_runs` if the intended metric is batter-hit boundaries only.
+- Duplicate-key checks identify repeated constructed identifiers; they do not by themselves establish why a repeated record exists.
+- The repository does not currently document the dataset publisher or licence. Add source attribution and usage terms if you have them.
 
-```bash
-psql -d your_database_name -f sql/01_setup_and_import.sql
-```
+## Future enhancements
 
-The script uses PostgreSQL's `\\copy` command and expects the two CSV files to be in the repository root. Run it from the repository root so the relative file paths resolve.
-
-### 3. Run the analysis queries
-
-```bash
-psql -d your_database_name -f sql/02_analysis_queries.sql
-```
-
-You can also open the SQL files in pgAdmin or another PostgreSQL client. The import commands in the setup script are `psql` meta-commands; if you use pgAdmin, create the tables first and import each CSV with its Import/Export feature.
-
-## Data notes and limitations
-
-- The original `IPL_MATCHES.sql` is retained as submitted. It contains machine-specific Windows file paths and table-constraint changes, so use the new `sql/` scripts for a clean setup on another machine.
-- The original project classifies deliveries with `total_runs >= 4` as boundaries. The new analysis query uses `batsman_runs IN (4, 6)` for batter boundaries and `total_runs = 0` for dot balls, making the definitions explicit.
-- The repository does not currently document the original dataset publisher or its licence. Add the source and permitted-use details if you have them.
-- No dashboard or numerical findings are claimed in this README. Run the queries against the supplied data to reproduce results.
-
-## Possible next improvements
-
-- Add query result screenshots or a short findings summary after validating the outputs.
-- Add indexes on frequently joined or filtered columns if query performance becomes a focus.
-- Add a data dictionary and document the dataset source and licence.
+- Validate and fix the original import section so the project can be run from a clean database without manual troubleshooting.
+- Add query output screenshots or exported result tables after executing the SQL.
+- Add a data dictionary and document dataset provenance.
+- Consider a more precise boundary definition based on batter runs and a deterministic ordering in duplicate inspection.
+- Add validated season-wise team and player summaries if you extend the analysis.
 
 ## Author
 
 **Raj Kishore Agrawal**
 
-- [LinkedIn](https://www.linkedin.com/in/rajagrawal1/)
 - [GitHub](https://github.com/rraj12345)
+- [LinkedIn](https://www.linkedin.com/in/rajagrawal1/)
