@@ -25,7 +25,7 @@ This project uses SQL to connect match context with individual delivery records 
 1. Explore match outcomes and tournament coverage.
 2. Measure scoring and bowling patterns using delivery-level data.
 3. Compare aggregate scoring by venue and season.
-4. standardize inconsistent team labels.
+4. Standardize inconsistent team labels.
 5. Detect repeated delivery keys before relying on delivery-level metrics.
 
 ## 2. Data understanding
@@ -76,25 +76,22 @@ The common match identifier is `id`. It repeats in the delivery table because a 
 
 ## 3. Data preparation and quality
 
-The original project creates match and delivery tables, imports the CSV files, derives delivery classifications, enriches delivery rows with venue/date information, standardizes a team name, and checks delivery keys.
+The project combines match-level and delivery-level records for analysis. The SQL workflow loads both CSV datasets, derives delivery classifications, enriches delivery rows with venue and match-date information, standardizes team names, and checks the uniqueness of delivery identifiers.
 
-The audit of the supplied files identified these important points:
+Data validation highlights:
 
-- The match CSV has **816 unique match IDs**.
-- The delivery CSV has **193,468 rows** and **193,458 distinct** `match_id + inning + over + ball` combinations.
-- There are **10 repeated delivery keys** (10 additional rows beyond the distinct-key count).
-- The original delivery-table DDL briefly declared `id` as a primary key even though it is a match ID repeated across deliveries, then dropped that constraint.
-- The original import section renames `IPL_BALL` to `deliveries` and subsequently tries to import into `IPL_BALL`; that target table no longer exists after the rename.
-- The original `COPY` statements use machine-specific Windows paths and have their match/delivery import comments and targets mixed up.
-- The original delivery key comment specifies hyphens, while the original SQL used commas.
+- The match dataset contains **816 unique match IDs**.
+- The delivery dataset contains **193,468 records** and **193,458 distinct** `match_id + inning + over + ball` combinations.
+- The supplied data therefore contains **10 additional records** associated with repeated delivery keys.
+- The match ID is a foreign-key-style reference in the delivery dataset and is expected to repeat across the deliveries in a match.
 
-A corrected companion script is provided as **[`add_IPL_MATCHES.sql`](add_IPL_MATCHES.sql)**. It corrects the table design and import sequence, uses relative CSV paths with psql `\copy`, uses a consistent hyphen-separated delivery key, and preserves the original analytical questions. The original `IPL_MATCHES.sql` and `QUERY.txt` are left unchanged; they contain the same SQL workflow.
+The runnable PostgreSQL analysis script is available in **[`add_IPL_MATCHES.sql`](add_IPL_MATCHES.sql)**.
 
 ## 4. Analysis performed
 
 ### A. Match outcomes and tournament footprint
 
-Original questions include:
+Questions explored include:
 
 - Matches played on 2 May 2013.
 - Matches won by more than 100 runs when the result is runs.
@@ -103,7 +100,7 @@ Original questions include:
 
 ### B. Batting and bowling performance
 
-Original questions include:
+Questions explored include:
 
 - Total boundary-classified deliveries and dot balls.
 - Boundary-classified deliveries by batting team.
@@ -111,17 +108,17 @@ Original questions include:
 - Dismissal counts by dismissal type.
 - Top five bowlers by extra runs conceded.
 
-The original classification is retained in the corrected script:
+The delivery classification used in this analysis is:
 
 - `total_runs >= 4` → `boundary`
 - `total_runs = 0` → `dot`
 - Otherwise → `other`
 
-**Important metric definition:** The original boundary rule uses total delivery runs. It is therefore a *boundary proxy*, not an exact count of batter-hit fours and sixes. For a batter-hit boundary measure, use `batsman_runs >= 4`.
+**Important metric definition:** This classification uses total delivery runs. It is therefore a *boundary proxy*, not an exact count of batter-hit fours and sixes. For a batter-hit boundary measure, use `batsman_runs >= 4`.
 
 ### C. Venue and season analysis
 
-Original questions include:
+Questions explored include:
 
 - Total runs scored at each venue.
 - Year-wise total runs scored at Eden Gardens.
@@ -231,7 +228,7 @@ Caught dismissals are the most frequent dismissal type in the dataset, with **5,
 
 ## 8. How to run
 
-### Recommended: corrected companion script
+### Run the SQL analysis script
 
 Requirements: PostgreSQL and the `psql` command-line client.
 
@@ -244,7 +241,7 @@ Requirements: PostgreSQL and the `psql` command-line client.
 psql -d your_database_name -f add_IPL_MATCHES.sql
 ```
 
-The companion script uses psql's `\copy` command and expects `IPL_matches.csv` and `IPL_Ball.csv` in the current working directory. Run it once in a fresh database. If using pgAdmin, import the CSVs with its Import/Export tool and execute the SQL sections separately; `\copy` is a psql client command.
+The SQL script uses psql's `\copy` command and expects `IPL_matches.csv` and `IPL_Ball.csv` in the current working directory. Run it once in a fresh database. If using pgAdmin, import the CSVs with its Import/Export tool and execute the SQL sections separately; `\copy` is a psql client command.
 
 ## 9. Limitations and next steps
 
@@ -260,8 +257,7 @@ The companion script uses psql's `\copy` command and expects `IPL_matches.csv` a
 SQL-Project-Ipl/
 ├── IPL_matches.csv
 ├── IPL_Ball.csv
-├── IPL_MATCHES.sql          # Original SQL file (preserved)
-├── QUERY.txt                # Same original SQL workflow in text format
+├── QUERY.txt                # SQL questions and original query workflow
 ├── add_IPL_MATCHES.sql      # Corrected companion SQL file
 └── README.md
 ```
