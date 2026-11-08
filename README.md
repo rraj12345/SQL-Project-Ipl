@@ -125,7 +125,7 @@ Questions explored include:
 
 ### D. Team-name standardization
 
-The project creates corrected team-name columns to consolidate `Rising Pune Supergiants` into `Rising Pune Supergiant`, so the same franchise is not split across two labels in grouped reports.
+The project creates standardized team-name columns to consolidate `Rising Pune Supergiants` into `Rising Pune Supergiant`, so the same franchise is not split across two labels in grouped reports.
 
 ### E. Delivery-key quality checks
 
@@ -133,7 +133,7 @@ The project builds a delivery key from match ID, innings, over and ball, compare
 
 ## 5. Quantitative findings
 
-The following figures were calculated directly from the committed CSV datasets using the same definitions as the original analysis. They are descriptive results from this dataset, not claims of a separately executed PostgreSQL session.
+The following figures were calculated directly from the committed CSV datasets using the analysis definitions described in this README. They are descriptive results from this dataset, not claims of a separately executed PostgreSQL session.
 
 ### Match-level findings
 
@@ -159,7 +159,7 @@ The following figures were calculated directly from the committed CSV datasets u
 | Distinct delivery keys | 193,458 |
 | Repeated delivery keys | 10 |
 
-The difference between the two boundary measures is **598 deliveries**. This is why the README distinguishes the original total-runs proxy from batter-hit boundaries.
+The difference between the two boundary measures is **598 deliveries**. This is why the README distinguishes the total-runs proxy from batter-hit boundaries.
 
 ### Teams with the most boundary-proxy deliveries
 
@@ -207,8 +207,8 @@ Caught dismissals are the most frequent dismissal type in the dataset, with **5,
 
 ## 6. Business interpretation
 
-- **Batting output:** Mumbai Indians lead the original boundary-proxy count (4,118). This indicates the highest count under the project's `total_runs >= 4` definition; it should not be interpreted as an exact fours-and-sixes leaderboard.
-- **Bowling pressure:** Mumbai Indians also record the most dot-ball deliveries (8,714) under the original definition. Dot-ball counts are a useful pressure indicator, but they should be compared with overs bowled or innings context for a fair efficiency measure.
+- **Batting output:** Mumbai Indians lead the boundary-proxy count (4,118). This indicates the highest count under the project's `total_runs >= 4` definition; it should not be interpreted as an exact fours-and-sixes leaderboard.
+- **Bowling pressure:** Mumbai Indians also record the most dot-ball deliveries (8,714) under the project's definition. Dot-ball counts are a useful pressure indicator, but they should be compared with overs bowled or innings context for a fair efficiency measure.
 - **Bowling discipline:** SL Malinga has the highest aggregate extra runs conceded in the dataset (293). This is a descriptive total and is not adjusted for matches or deliveries bowled.
 - **Ground context:** Eden Gardens has the highest aggregate runs (23,658) among the listed venues. A deeper venue comparison should normalize by matches played at each ground.
 - **Data trust:** The 10 repeated delivery keys show why record-level validation matters before building player or team KPIs.
@@ -257,8 +257,8 @@ The SQL script uses psql's `\copy` command and expects `IPL_matches.csv` and `IP
 SQL-Project-Ipl/
 ├── IPL_matches.csv
 ├── IPL_Ball.csv
-├── QUERY.txt                # SQL questions and original query workflow
-├── add_IPL_MATCHES.sql      # Corrected companion SQL file
+├── QUERY.txt                # SQL questions and query workflow
+├── add_IPL_MATCHES.sql      # PostgreSQL analysis script
 └── README.md
 ```
 
